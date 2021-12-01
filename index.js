@@ -69,10 +69,8 @@ class Grid{
         this.blocks = []
         this.colorPalette = []
         this.colorPaletteGenerator()
-        container.style["display"] = "flex";
-        container.style["flex-wrap"] = "wrap";
-        container.style["justify-content"] = "center";
-        container.style["border"] = "5px solid black";
+        container.classList.remove("d-none");
+        // container.style["border"] = "5px solid black";
         container.innerHTML = "";
         let block_size = {
             width: Math.floor(this.container.clientWidth/sizeX),
@@ -91,7 +89,7 @@ class Grid{
 
     colorPaletteGenerator(){
         let usedColors = new Set;
-        while(this.colorPalette.length<this.sizeX*this.sizeY){
+        while(this.colorPalette.length<=this.sizeX*this.sizeY){
             let color = randomColorHexGenerator();
             if(!usedColors.has(color) && color!="#ffffff"){
                 this.colorPalette.push(color);
@@ -126,18 +124,22 @@ class Grid{
 
     findChilds(currentCordinates){
         let childs = []
-        if(currentCordinates.x>1 && currentCordinates.x<this.sizeX){
-            childs.push({x: currentCordinates.x+1, y: currentCordinates.y})
-            childs.push({x: currentCordinates.x-1, y: currentCordinates.y})
-        }else{
-            childs.push({x: currentCordinates.x==1 ? currentCordinates.x+1 : currentCordinates.x-1, y: currentCordinates.y})
+        if(this.sizeX!=1){
+            if(currentCordinates.x>1 && currentCordinates.x<this.sizeX){
+                childs.push({x: currentCordinates.x+1, y: currentCordinates.y})
+                childs.push({x: currentCordinates.x-1, y: currentCordinates.y})
+            }else{
+                childs.push({x: currentCordinates.x==1 ? currentCordinates.x+1 : currentCordinates.x-1, y: currentCordinates.y})
+            }
         }
 
-        if(currentCordinates.y>1 && currentCordinates.y<this.sizeY){
-            childs.push({x: currentCordinates.x, y: currentCordinates.y+1})
-            childs.push({x: currentCordinates.x, y: currentCordinates.y-1})
-        }else{
-            childs.push({x: currentCordinates.x, y: currentCordinates.y==1 ? currentCordinates.y+1 : currentCordinates.y-1})
+        if(this.sizeY!=1){
+            if(currentCordinates.y>1 && currentCordinates.y<this.sizeY){
+                childs.push({x: currentCordinates.x, y: currentCordinates.y+1})
+                childs.push({x: currentCordinates.x, y: currentCordinates.y-1})
+            }else{
+                childs.push({x: currentCordinates.x, y: currentCordinates.y==1 ? currentCordinates.y+1 : currentCordinates.y-1})
+            }
         }
 
         return childs;
@@ -173,17 +175,84 @@ class Grid{
             }
         }
         console.log("Completed Pre Processing!")
-        console.log(operations.length)
+        // console.log(operations.length)
         operations.forEach((obj,index)=>{
             setTimeout(function(obj){
                 obj.element.style["background-color"] = obj.color;
-            }, (index+1)*5, obj);
+            }, (index+1)*50, obj);
         })
     }
 }
 
-grid = new Grid(main_div, 100, 100);
-grid.generateMaze(30)
-grid.ItrativeBFS()
+
+
+// Controller Events Handlers
+function findNextDivisors(current, n){
+    if(current==n){return n};
+    if(current<=Math.floor(Math.sqrt(n))){
+        for(var i=current+1; i<=Math.floor(Math.sqrt(n)); i++){
+            if(n%i==0){
+                return i;
+            }
+        }
+    }
+    let paired_divisors = [];
+    for(var i=1; i<=Math.floor(Math.sqrt(n)); i++){
+        if(n%i==0){
+            paired_divisors.push(Math.floor(n/i));
+        }
+    }
+    for(var i=paired_divisors.length-1; i>=0; i--){
+        if(paired_divisors[i]>current){
+            return paired_divisors[i];
+        }
+    }
+    
+}
+function findPreviousDivisors(current, n){
+    for(var i=current-1; i>=1; i--){
+        if(n%i==0){
+            return i;
+        }
+    }
+}
+
+$(document).on('click', ".plus", function(){
+    let container = document.getElementById("main");
+    let element = $(this).parent().parent().find("input")[0];
+    if(element.id=="sizeX"){
+        element.value = findNextDivisors(Number(element.value), container.clientWidth) || 1;
+    }else{
+        element.value = findNextDivisors(Number(element.value), container.clientHeight) || 1;
+    }
+})
+$(document).on('click', ".minus", function(){
+    let container = document.getElementById("main");
+    let element = $(this).parent().parent().find("input")[0];
+    if(element.id=="sizeX"){
+        element.value = findPreviousDivisors(Number(element.value), container.clientWidth) || 1;
+    }else{
+        element.value = findPreviousDivisors(Number(element.value), container.clientHeight) || 1;
+    }
+})
+$(document).on("click", "#generate_maze", function(){
+    $("#bfs").addClass("d-none")
+    let sizeX = Number(document.getElementById("sizeX").value);
+    let sizeY = Number(document.getElementById("sizeY").value);
+    let blocking_percentage_element = document.getElementById("blocking_percentage");
+    let blocking_percentage = document.getElementById("blocking_percentage").value;
+    if(!(blocking_percentage>=0 && blocking_percentage<=100)){
+        blocking_percentage_element.value = 0;
+    }
+    window.grid = new Grid(document.getElementById("main"), sizeX, sizeY)
+    window.grid.generateMaze(blocking_percentage);
+    console.log("Maze Generated!");
+    $("#bfs").removeClass("d-none")
+})
+$(document).on("click", "#bfs", function(){
+    window.grid.ItrativeBFS();
+})
+// End
+
 
 
