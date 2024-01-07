@@ -1,0 +1,1 @@
+![Demo Image](./graph-bfs-visualizer-demo.jpeg)
